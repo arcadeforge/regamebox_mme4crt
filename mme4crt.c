@@ -7,15 +7,15 @@
 #include <stdio.h>
 
 long free_pixel_clock = 31270000;
-int compute_dynamic_width(int width, float freq);
+int compute_dynamic_width(int width, int hmax, float freq);
 
-void crt_rpi_switch(int width, int height, float hz, int crt_center_adjust);
+int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int mode);
 
 int main(int argc, char **argv)
 {
 
 
-    if (argc != 6)
+    if (argc != 7)
     {
         printf("Usage : mme4crt <width> <heigth> <freq> <shift> <superres> \n");
         printf("      : width of game\n");
@@ -23,43 +23,64 @@ int main(int argc, char **argv)
         printf("      : freq of game\n");
         printf("      : shift in x\n");
         printf("      : 1 or 0 for superres\n");
+        printf("      : 0, 1, 2 for modes\n");
+        printf(" mode = 0 internal use\n");
+        printf(" mode = 1 write results in files for regamebox\n");
+        printf(" mode = 2 execute timings directly\n");
         printf("mme4crt 320 224 60 1\n");
         return 0;
     }
 
-    int w, h, shift, superres = 0;
+    int w, h, shift, superres, mode = 0;
     float freq = 0;
     w = strtol(argv[1], NULL, 10);
     h = strtol(argv[2], NULL, 10);
     freq = strtof(argv[3], NULL);
     shift = strtol(argv[4], NULL, 10);
     superres = strtol(argv[5], NULL, 10);
+    mode = strtol(argv[6], NULL, 10);
+
+
 
     printf ("width : %i\n", w);
     printf ("height : %i\n", h);
     printf ("freq : %f\n", freq);
     printf ("shift : %i\n", shift );
     printf ("super res : %i\n", superres);
-    int dyn_w = 0;
-    dyn_w = compute_dynamic_width (w, freq);
+    printf ("mode : %i\n", mode);
 
-    printf ("dynamic width : %i\n", dyn_w);
 
-    if (superres == 1)
-        crt_rpi_switch (dyn_w, h, freq, shift);
+    if (superres == 1) {
+        // get hmax for super res
+        int htotal =crt_rpi_switch (w, h, freq, shift, 0);
+        printf ("htotoal : %i\n", htotal);
+
+        int dyn_w = compute_dynamic_width (w, htotal, freq);
+        printf ("dynamic width : %i\n", dyn_w);
+        // now set new res
+        crt_rpi_switch (dyn_w, h, freq, shift, mode);
+    }
     else
-        crt_rpi_switch (w, h, freq, shift);
+        crt_rpi_switch (w, h, freq, shift, mode);
 }
 
 
-int compute_dynamic_width(int width, float freq)
+int compute_dynamic_width(int width, int hmax, float freq)
 {
     float i;
     int dynamic_width   = 0;
-    int min_height = 261;
+    //int min_height = 261;
+
+    // bug rtype
+    // rtype has 384 256 55
+    // thus we have height total 296
+    // using 261 lower value ends then in xres 2188
+    // which cant be handled with rpi
+    // so get hmax from hdmit_timings
+    int min_height = hmax;
 
     long p_clock_test = 0;
-   
+
    for (i = 0; i < 10; i=i+0.1)
    {
         dynamic_width = width * i;
@@ -68,7 +89,7 @@ int compute_dynamic_width(int width, float freq)
         printf ("min_height : %i\n",min_height );
         printf ("freq : %i\n", freq);
         printf ("dynamic width : %i\n", dynamic_width);
-        printf ("p_clock : %i\n", p_clock);
+        printf ("free p_clock : %i\n", free_pixel_clock);
         printf ("p_clock_test : %i\n", p_clock_test);
 
 */
@@ -79,7 +100,7 @@ int compute_dynamic_width(int width, float freq)
    return dynamic_width;
 }
 
-void crt_rpi_switch(int width, int height, float hz, int crt_center_adjust)
+int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int mode)
 {
 
     char buffer[1024];
@@ -109,16 +130,19 @@ void crt_rpi_switch(int width, int height, float hz, int crt_center_adjust)
 
 
     /* following code is the mode line generator */
-    hsp = (width * 0.117) - (xoffset*4);
+    //hsp = (width * 0.117) - (xoffset*4);
+    //printf("%i", xoffset);
+
+    hsp = (width * 0.117);
     if (width < 700)
     {
-        hfp    = (width * 0.065);
-        hbp  = width * 0.35-hsp-hfp;
+        hfp    = (width * 0.065) - xoffset;
+        hbp  = (width * 0.35-hsp-hfp) + xoffset;
     }
     else
     {
-        hfp  = (width * 0.033) + (width / 112);
-        hbp  = (width * 0.225) + (width /58);
+        hfp  = ((width * 0.033) + (width / 112)) - xoffset;
+        hbp  = ((width * 0.225) + (width /58)) + xoffset;
         xoffset = xoffset*2;
     }
 
@@ -191,34 +215,78 @@ void crt_rpi_switch(int width, int height, float hz, int crt_center_adjust)
 
 
 
-    snprintf(set_hdmi_timing, sizeof(set_hdmi_timing),
-        "vcgencmd hdmi_timings %d 1 %d %d %d %d 1 %d %d %d 0 0 0 %f %d %f 1",
-        width, hfp, hsp, hbp, height, vfp,vsp, vbp,
-        hz, ip_flag, pixel_clock);
-
-    FILE *f = fopen("timings.txt", "a");
-    fprintf(f,"%s\n",set_hdmi_timing);
-    fclose(f);
-
-    printf("%s\n",set_hdmi_timing);
-
-
-    if (pid == 0) 
+    if (mode == 1) 
     {
-        system(set_hdmi_timing);
-        sleep(0.5);
-        snprintf(output1,  sizeof(output1),
-           "tvservice -e \"DMT 87\"");
-        system(output1);
 
-        sleep(0.3);
-        snprintf(output2,  sizeof(output1),
-          "fbset -g %d %d %d %d 32", width, height, width, height);
-        system(output2);
-        //snprintf(output2,  sizeof(output1),
-        //   "fbset -depth 32");
-        //system(output2);
-        exit(0);
-   }
+        snprintf(set_hdmi_timing, sizeof(set_hdmi_timing),
+            "vcgencmd hdmi_timings %d 1 %d %d %d %d 1 %d %d %d 0 0 0 %f %d %f 1",
+            width, hfp, hsp, hbp, height, vfp,vsp, vbp,
+            hz, ip_flag, pixel_clock);
+
+        FILE *f = fopen("timings.txt", "a");
+        fprintf(f,"%s\n",set_hdmi_timing);
+        fclose(f);
+
+        printf("%s\n",set_hdmi_timing);
+
+
+        FILE *file = fopen("/root/resolution/game.cfg", "w");
+        fprintf(file,"custom_viewport_width = \"%i\"\n", width);
+        fprintf(file,"custom_viewport_height = \"%i\"\n" , height);
+
+        // User know best what he want :))
+        //fprintf(file,"custom_viewport_x = \"%s\"\n" , 0);
+        //fprintf(file,"custom_viewport_y = \"%s\"\n" , 0);
+
+        //fprintf(file,"video_scale_integer = \"false\"\n");
+
+
+        fprintf(file,"aspect_ratio_index = \"22\"\n");
+
+
+        //fprintf(file,"video_smooth = \"false\"\n");
+        //fprintf(file,"video_threaded = \"false\"\n");
+        //fprintf(file,"crop_overscan = \"false\"\n");
+
+        //FIXME
+        //fprintf(file,"video_rotation = \"%s\"\n" , (rotation));
+
+        // vertical games on h screen 
+        //fprintf(file,"video_rotation = \"0\"\n");
+
+        fclose(file);
+
+
+        FILE *res_script = fopen("/root/scripts/game_res.sh", "w");
+        fprintf(res_script,"%s\n",set_hdmi_timing);
+        fprintf(res_script,"tvservice -e  \"DMT 87\" > /dev/null\n");
+        fprintf(res_script,"sleep 0.3\n");
+        fprintf(res_script,"fbset -depth 8 && fbset -depth 24\n");
+        fprintf(res_script,"sleep 0.3\n");
+        fclose(res_script);
+
+    }
+
+    if (mode == 2) 
+    { 
+        if (pid == 0) 
+        {
+            system(set_hdmi_timing);
+            sleep(0.5);
+            snprintf(output1,  sizeof(output1),
+               "tvservice -e \"DMT 87\"");
+            system(output1);
+
+            sleep(0.3);
+            snprintf(output2,  sizeof(output1),
+              "fbset -g %d %d %d %d 32", width, height, width, height);
+            system(output2);
+            //snprintf(output2,  sizeof(output1),
+            //   "fbset -depth 32");
+            //system(output2);
+            exit(0);
+        }
+    }
+    return height + vfp + vsp + vbp;
 
 }
