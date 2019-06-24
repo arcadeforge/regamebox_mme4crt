@@ -9,7 +9,7 @@
 long free_pixel_clock = 31270000;
 int compute_dynamic_width(int width, int hmax, float freq);
 
-int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int mode);
+int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int mode, int superres);
 
 int main(int argc, char **argv)
 {
@@ -27,7 +27,7 @@ int main(int argc, char **argv)
         printf(" mode = 0 internal use\n");
         printf(" mode = 1 write results in files for regamebox\n");
         printf(" mode = 2 execute timings directly\n");
-        printf("mme4crt 320 224 60 1\n");
+        printf("mme4crt 320 224 60 1 1\n");
         return 0;
     }
 
@@ -52,16 +52,17 @@ int main(int argc, char **argv)
 
     if (superres == 1) {
         // get hmax for super res
-        int htotal =crt_rpi_switch (w, h, freq, shift, 0);
-        printf ("htotoal : %i\n", htotal);
-
-        int dyn_w = compute_dynamic_width (w, htotal, freq);
-        printf ("dynamic width : %i\n", dyn_w);
+        //int htotal =crt_rpi_switch (w, h, freq, shift, 0, superres);
+        //printf ("htotoal : %i\n", htotal);
+        //int dyn_w = compute_dynamic_width (w, htotal, freq);
+        //printf ("dynamic width : %i\n", dyn_w);
         // now set new res
-        crt_rpi_switch (dyn_w, h, freq, shift, mode);
+        //Assume 2080
+
+        crt_rpi_switch (2040, h, freq, shift, mode, superres);
     }
     else
-        crt_rpi_switch (w, h, freq, shift, mode);
+        crt_rpi_switch (w, h, freq, shift, mode, superres);
 }
 
 
@@ -100,7 +101,7 @@ int compute_dynamic_width(int width, int hmax, float freq)
    return dynamic_width;
 }
 
-int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int mode)
+int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int mode, int superres)
 {
 
     char buffer[1024];
@@ -134,6 +135,7 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
     //printf("%i", xoffset);
 
     hsp = (width * 0.117);
+
     if (width < 700)
     {
         hfp    = (width * 0.065) - xoffset;
@@ -143,17 +145,25 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
     {
         hfp  = ((width * 0.033) + (width / 112)) - xoffset;
         hbp  = ((width * 0.225) + (width /58)) + xoffset;
-        xoffset = xoffset*2;
     }
 
-    hmax = hbp;
+    if (superres == 1)
+    {
+        hfp  = ((width * 0.033) + (width / 112)) - xoffset;
+        hbp  = ((width * 0.125) + (width / 58)) + xoffset;
+
+    }
+    //hmax = hbp;
 
     if (height < 241)
         vmax = 261;
-    if (height < 241 && hz > 56 && hz < 58)
+    //if (height < 241 && hz > 56 && hz < 58)
+    if (height < 241 && hz > 55 && hz < 58)
         vmax = 280;
     if (height < 241 && hz < 55)
-        vmax = 313;
+    {    //vmax = 313;
+        vmax = 290;
+    }
     if (height > 250 && height < 260 && hz > 54)
         vmax = 296;
     if (height > 250 && height < 260 && hz > 52 && hz < 54)
@@ -177,6 +187,7 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
 
     vfp = (height + ((vmax - height) / 2) - pdefault) - height;
 
+    // no affect
     if (height < 300)
         vsp = vfp + 3; /* needs to be 3 for progressive */
     if (height > 300)
