@@ -17,14 +17,13 @@ int main(int argc, char **argv)
 
     if (argc != 7)
     {
-        printf("Usage : mme4crt <width> <heigth> <freq> <shift> <superres> \n");
-        printf("      : width of game\n");
-        printf("      : heigth of game\n");
-        printf("      : freq of game\n");
-        printf("      : shift in x\n");
-        printf("      : 1 or 0 for superres\n");
-        printf("      : 0, 1, 2 for modes\n");
-        printf(" mode = 0 internal use\n");
+        printf("Usage : mme4crt <width> <heigth> <freq> <shift> <superres> <mode>\n");
+        printf("width      : width of game\n");
+        printf("height     : heigth of game\n");
+        printf("freq       : freq of game\n");
+        printf("shift      : shift in x\n");
+        printf("superres   : 1 or 0 for superres\n");
+        printf("mode      :  1, 2 for modes\n");
         printf(" mode = 1 write results in files for regamebox\n");
         printf(" mode = 2 execute timings directly\n");
         printf("mme4crt 320 224 60 1 1\n");
@@ -59,7 +58,7 @@ int main(int argc, char **argv)
         // now set new res
         //Assume 2080
 
-        crt_rpi_switch (2040, h, freq, shift, mode, superres);
+        crt_rpi_switch (1920, h, freq, shift, mode, superres);
     }
     else
         crt_rpi_switch (w, h, freq, shift, mode, superres);
@@ -181,12 +180,19 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
     //if (height < 241 && hz > 56 && hz < 58)
     if (height < 241 && hz > 55 && hz < 58)
         vmax = 280;
+	if (height < 241 && hz > 56 && hz < 58)
+        vmax = 282;
     if (height < 241 && hz < 55)
     {    //vmax = 313;
-        vmax = 290;
+		// flying shark / twin cobra
+        vmax = 286;
     }
     if (height > 250 && height < 260 && hz > 54)
         vmax = 296;
+	if (height > 255 && height < 257 && hz > 54 && hz < 56)
+	{	// r-type?
+		vmax = 290;
+	}
     if (height > 250 && height < 260 && hz > 52 && hz < 54)
         vmax = 285;
     if (height > 250 && height < 260 && hz < 52)
