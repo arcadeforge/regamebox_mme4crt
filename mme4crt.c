@@ -58,7 +58,7 @@ int main(int argc, char **argv)
         // now set new res
         //Assume 2080
 
-        crt_rpi_switch (2040, h, freq, shift, mode, superres);
+        crt_rpi_switch (1920, h, freq, shift, mode, superres);
     }
     else
         crt_rpi_switch (w, h, freq, shift, mode, superres);
@@ -180,12 +180,19 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
     //if (height < 241 && hz > 56 && hz < 58)
     if (height < 241 && hz > 55 && hz < 58)
         vmax = 280;
+	if (height < 241 && hz > 56 && hz < 58)
+        vmax = 282;
     if (height < 241 && hz < 55)
     {    //vmax = 313;
-        vmax = 290;
+		// flying shark / twin cobra
+        vmax = 286;
     }
     if (height > 250 && height < 260 && hz > 54)
         vmax = 296;
+	if (height > 255 && height < 257 && hz > 54 && hz < 56)
+	{	// r-type?
+		vmax = 290;
+	}
     if (height > 250 && height < 260 && hz > 52 && hz < 54)
         vmax = 285;
     if (height > 250 && height < 260 && hz < 52)
