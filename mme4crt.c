@@ -17,14 +17,13 @@ int main(int argc, char **argv)
 
     if (argc != 7)
     {
-        printf("Usage : mme4crt <width> <heigth> <freq> <shift> <superres> \n");
-        printf("      : width of game\n");
-        printf("      : heigth of game\n");
-        printf("      : freq of game\n");
-        printf("      : shift in x\n");
-        printf("      : 1 or 0 for superres\n");
-        printf("      : 0, 1, 2 for modes\n");
-        printf(" mode = 0 internal use\n");
+        printf("Usage : mme4crt <width> <heigth> <freq> <shift> <superres> <mode>\n");
+        printf("width      : width of game\n");
+        printf("height     : heigth of game\n");
+        printf("freq       : freq of game\n");
+        printf("shift      : shift in x\n");
+        printf("superres   : 1 or 0 for superres\n");
+        printf("mode      :  1, 2 for modes\n");
         printf(" mode = 1 write results in files for regamebox\n");
         printf(" mode = 2 execute timings directly\n");
         printf("mme4crt 320 224 60 1 1\n");
