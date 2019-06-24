@@ -42,12 +42,13 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    int w, h, shift, superres, mode = 0;
+    int w, h, shift,shift_v, superres, mode = 0;
     float freq = 0;
     w = strtol(argv[1], NULL, 10);
     h = strtol(argv[2], NULL, 10);
     freq = strtof(argv[3], NULL);
     shift = strtol(argv[4], NULL, 10);
+    //shift_v = strtol(argv[5], NULL, 10);
     superres = strtol(argv[5], NULL, 10);
     mode = strtol(argv[6], NULL, 10);
 
@@ -57,6 +58,7 @@ int main(int argc, char **argv)
     printf ("height : %i\n", h);
     printf ("freq : %f\n", freq);
     printf ("shift : %i\n", shift );
+    printf ("shift_v : %i\n", shift_v );
     printf ("super res : %i\n", superres);
     printf ("mode : %i\n", mode);
 
@@ -137,6 +139,7 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
     float pixel_clock  = 0;
     int ip_flag     = 0;
     int xoffset = crt_center_adjust;
+    int yoffset = 0;
     pid_t pid = fork();
 
 
@@ -224,7 +227,7 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
     if (height > 300)
         pdefault = pdefault * 2;
 
-    vfp = (height + ((vmax - height) / 2) - pdefault) - height;
+    vfp = ((height + ((vmax - height) / 2) - pdefault) - height) - yoffset;
 
     // no affect
     if (height < 300)
@@ -234,7 +237,7 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
 
     vsp = 3;
 
-    vbp = (vmax-height)-vsp-vfp;
+    vbp = ((vmax-height)-vsp-vfp)  + yoffset;
 
     hmax = width+hfp+hsp+hbp;
 
@@ -268,7 +271,7 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
     {
 
         snprintf(set_hdmi_timing, sizeof(set_hdmi_timing),
-            "vcgencmd hdmi_timings %d 1 %d %d %d %d 1 %d %d %d 0 0 0 %f %d %f 1",
+            "vcgencmd hdmi_timings %d 1 %d %d %d %d 1 %d %d %d 0 0 0 %.0f %d %.0f 1",
             width, hfp, hsp, hbp, height, vfp,vsp, vbp,
             hz, ip_flag, pixel_clock);
 
@@ -292,7 +295,9 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
         fprintf(res_script,"%s\n",set_hdmi_timing);
         fprintf(res_script,"tvservice -e  \"DMT 87\" > /dev/null\n");
         fprintf(res_script,"sleep 0.3\n");
-        fprintf(res_script,"fbset -depth 8 && fbset -depth 24\n");
+        fprintf(res_script,"fbset -xres %d -yres %d\n", width, height);
+
+        //fprintf(res_script,"fbset -depth 8 && fbset -depth 24\n");
         fprintf(res_script,"sleep 0.3\n");
         fclose(res_script);
 
@@ -304,7 +309,7 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
     {
 
         snprintf(set_hdmi_timing, sizeof(set_hdmi_timing),
-            "vcgencmd hdmi_timings %d 1 %d %d %d %d 1 %d %d %d 0 0 0 %f %d %f 1",
+            "vcgencmd hdmi_timings %d 1 %d %d %d %d 1 %d %d %d 0 0 0 %.1f %d %.0f 1",
             width, hfp, hsp, hbp, height, vfp,vsp, vbp,
             hz, ip_flag, pixel_clock);
 
@@ -363,8 +368,10 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
             system(output1);
 
             sleep(0.3);
+            //snprintf(output2,  sizeof(output1),
+            //  "fbset -g %d %d %d %d 32", width, height, width, height);
             snprintf(output2,  sizeof(output1),
-              "fbset -g %d %d %d %d 32", width, height, width, height);
+              "fbset -xres %d -xyres %d", width, height);
             system(output2);
             //snprintf(output2,  sizeof(output1),
             //   "fbset -depth 32");
