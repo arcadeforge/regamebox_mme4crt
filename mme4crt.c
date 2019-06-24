@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     printf ("mode : %i\n", mode);
 
 
-    if (superres == 1) {
+    if (superres >= 1) {
         // get hmax for super res
         //int htotal =crt_rpi_switch (w, h, freq, shift, 0, superres);
         //printf ("htotoal : %i\n", htotal);
@@ -82,8 +82,8 @@ int compute_dynamic_width(int width, int hmax, float freq)
 
     long p_clock_test = 0;
 
-   for (i = 0; i < 10; i=i+0.1)
-   {
+    for (i = 0; i < 10; i=i+0.1)
+    {
         dynamic_width = width * i;
         p_clock_test = dynamic_width * min_height * freq;
 /*
@@ -97,8 +97,8 @@ int compute_dynamic_width(int width, int hmax, float freq)
         if (p_clock_test > free_pixel_clock)
             break;
 
-   }
-   return dynamic_width;
+    }
+    return dynamic_width;
 }
 
 int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int mode, int superres)
@@ -151,6 +151,27 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
     {
         hfp  = ((width * 0.033) + (width / 112)) - xoffset;
         hbp  = ((width * 0.125) + (width / 58)) + xoffset;
+
+    }
+    // @Asche : check factors
+    if (superres == 2)
+    {
+        hfp  = ((width * 0.033) + (width / 112)) - xoffset;
+        hbp  = ((width * 0.150) + (width / 58)) + xoffset;
+
+    }
+    // @Asche : check factors
+    if (superres == 3)
+    {
+        hfp  = ((width * 0.033) + (width / 112)) - xoffset;
+        hbp  = ((width * 0.175) + (width / 58)) + xoffset;
+
+    }
+    // @Asche : check factors
+    if (superres == 4)
+    {
+        hfp  = ((width * 0.033) + (width / 112)) - xoffset;
+        hbp  = ((width * 0.200) + (width / 58)) + xoffset;
 
     }
     //hmax = hbp;
