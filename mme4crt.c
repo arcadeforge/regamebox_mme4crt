@@ -40,13 +40,11 @@ int main(int argc, char **argv)
     printf ("freq : %f\n", freq);
     printf ("shift : %i\n", shift );
     printf ("super res : %i\n", superres);
-    int dyn_w = 0;
-    dyn_w = compute_dynamic_width (w, freq);
 
-    printf ("dynamic width : %i\n", dyn_w);
+    printf ("dynamic width : %i\n", compute_dynamic_width (w, freq));
 
     if (superres == 1)
-        crt_rpi_switch (dyn_w, h, freq, shift);
+        crt_rpi_switch (compute_dynamic_width (w, freq), h, freq, shift);
     else
         crt_rpi_switch (w, h, freq, shift);
 }
