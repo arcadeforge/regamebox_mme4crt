@@ -15,10 +15,10 @@ height - height resolution of game
 freq - frequency of game
 shift - x shift on screen
 superres - 0 or 1 for superres use and not
-mode - 0, 1, 2 for modes\n");
-  mode = 0 internal use\n");
-  mode = 1 write results in files for regamebox\n");
-  mode = 2 execute timings directly\n");
+mode - 0, 1, 2 for modes
+  mode = 0 internal use
+  mode = 1 write results in files for regamebox
+  mode = 2 execute timings directly
 
 Build
 
