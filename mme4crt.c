@@ -1,4 +1,10 @@
-/***/
+/*
+ * based on the mme4crt program from Ben Templeman
+ * extended for use with rpi3b+
+ * Please use for pi2scart and pi2jamma only
+ * Author Jochen Zurborg
+ * Date 08.11.2019
+**/
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
@@ -22,11 +28,14 @@ int main(int argc, char **argv)
         printf("height     : heigth of game\n");
         printf("freq       : freq of game\n");
         printf("shift      : shift in x\n");
-        printf("superres   : 1 or 0 for superres\n");
-        printf("mode      :  1, 2 for modes\n");
+        printf("superres   : 1 (on) or 0 (off) for superres\n");
+        printf("mode      :  0, 1, 2 for modes\n");
+        printf(" mode = 0 write results in files retroarch_game.cfg, game_res.sh\n");
         printf(" mode = 1 write results in files for regamebox\n");
         printf(" mode = 2 execute timings directly\n");
-        printf("mme4crt 320 224 60 1 1\n");
+        printf("mme4crt 320 224 60 30 1 1\n");
+        printf("\n\nThis app is made for pi2scart and pi2jamma from www.arcadeforge.de only\n");
+        
         return 0;
     }
 
@@ -251,8 +260,43 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
                 else
                     pixel_clock = 19200000;
 
+    //write files
+    if (mode == 0) 
+    {
+
+        snprintf(set_hdmi_timing, sizeof(set_hdmi_timing),
+            "vcgencmd hdmi_timings %d 1 %d %d %d %d 1 %d %d %d 0 0 0 %f %d %f 1",
+            width, hfp, hsp, hbp, height, vfp,vsp, vbp,
+            hz, ip_flag, pixel_clock);
+
+        FILE *f = fopen("timings.txt", "a");
+        fprintf(f,"%s\n",set_hdmi_timing);
+        fclose(f);
+
+        printf("%s\n",set_hdmi_timing);
 
 
+        FILE *file = fopen("retroarch_game.cfg", "w");
+        fprintf(file,"custom_viewport_width = \"%i\"\n", width);
+        fprintf(file,"custom_viewport_height = \"%i\"\n" , height);
+        fprintf(file,"aspect_ratio_index = \"22\"\n");
+
+        //fprintf(file,"video_rotation = \"0\"\n");
+
+        fclose(file);
+
+        FILE *res_script = fopen("game_res.sh", "w");
+        fprintf(res_script,"%s\n",set_hdmi_timing);
+        fprintf(res_script,"tvservice -e  \"DMT 87\" > /dev/null\n");
+        fprintf(res_script,"sleep 0.3\n");
+        fprintf(res_script,"fbset -depth 8 && fbset -depth 24\n");
+        fprintf(res_script,"sleep 0.3\n");
+        fclose(res_script);
+
+    }
+
+
+    //write regamebox files
     if (mode == 1) 
     {
 
@@ -304,7 +348,7 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
         fclose(res_script);
 
     }
-
+    //execute hdmi_timings 
     if (mode == 2) 
     { 
         if (pid == 0) 
