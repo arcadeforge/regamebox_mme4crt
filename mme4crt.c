@@ -282,7 +282,7 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
         FILE *file = fopen("retroarch_game.cfg", "w");
         fprintf(file,"custom_viewport_width = \"%i\"\n", width);
         fprintf(file,"custom_viewport_height = \"%i\"\n" , height);
-        fprintf(file,"aspect_ratio_index = \"22\"\n");
+        fprintf(file,"aspect_ratio_index = \"23\"\n");
 
         //fprintf(file,"video_rotation = \"0\"\n");
 
@@ -326,7 +326,7 @@ int crt_rpi_switch(int width, int height, float hz, int crt_center_adjust, int m
         //fprintf(file,"video_scale_integer = \"false\"\n");
 
 
-        fprintf(file,"aspect_ratio_index = \"22\"\n");
+        fprintf(file,"aspect_ratio_index = \"23\"\n");
 
 
         //fprintf(file,"video_smooth = \"false\"\n");
